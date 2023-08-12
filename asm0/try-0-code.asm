@@ -1,7 +1,7 @@
-.code
+п»ї.code
 
 ;---------------------------------------------------------------------
-; Расчитываем смещение позиция для линейного буфера
+; Р Р°СЃС‡РёС‚С‹РІР°РµРј СЃРјРµС‰РµРЅРёРµ РїРѕР·РёС†РёСЏ РґР»СЏ Р»РёРЅРµР№РЅРѕРіРѕ Р±СѓС„РµСЂР°
 _invstack_Calculate_Offset_Position proc
 ; r10 - position: PutSymbols_Position
 ;	PutSymbols_Position: < _u16:length | u16:width | u16:y | u16:x >
@@ -173,7 +173,7 @@ Put_Symbols_Region endp
 ;#####################################################################
 
 ;---------------------------------------------------------------------
-; Рисуем цветовой прямоугольник
+; Р РёСЃСѓРµРј С†РІРµС‚РѕРІРѕР№ РїСЂСЏРјРѕСѓРіРѕР»СЊРЅРёРє
 Draw_Color_Rectangle proc
 	; void (CHAR_INFO * screenBuffer, DrawRectangleParams params)
 	; DrawRectangleParams = { u16 };
@@ -192,23 +192,23 @@ Draw_Color_Rectangle proc
 	shl rax, 2
 	
 	; r10 = 16
-	; r10 - счётчик высоты
+	; r10 - СЃС‡С‘С‚С‡РёРє РІС‹СЃРѕС‚С‹
 	mov r10, 16
 
 _draw_color_rectangle:
 		; r11 = 16
-		; r11 - счётчик ширины
+		; r11 - СЃС‡С‘С‚С‡РёРє С€РёСЂРёРЅС‹
 		mov r11, 16
 
 	_draw_color_line: 
 			; rbx = { u4:c_background }
 			mov rbx, r10
-			sub rbx, 1 ; поправка счётчика
+			sub rbx, 1 ; РїРѕРїСЂР°РІРєР° СЃС‡С‘С‚С‡РёРєР°
 
 			; rbx = { u4:c_background, u4:c_symbol }
 			shl rbx, 4
 			add rbx, r11
-			sub rbx, 1 ; поправка счётчика
+			sub rbx, 1 ; РїРѕРїСЂР°РІРєР° СЃС‡С‘С‚С‡РёРєР°
 
 			; rbx = { u4:c_background, u4:c_symbol, u16:symbol }
 			shl rbx, 16
