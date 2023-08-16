@@ -101,9 +101,7 @@ int main(void)
 	PutSymbols_Position putSymbolsParams{ 1, 1, width, 3 };
 	PutSymbols_Draw putSymbolsDrawParam{ symbol, 4 };
 
-
 	PutSymbols_Position regionPars{ 5, 2, width, 8 };
-
 
 	Put_Symbols_Horizontal(screenBuffer, putSymbolsParams, putSymbolsDrawParam);
 	Put_Symbols_Region(screenBuffer, regionPars, putSymbolsDrawParam);

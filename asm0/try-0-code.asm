@@ -1,7 +1,9 @@
-п»ї.code
+.code
+
+; If file not compiled try set encodeing "Windows 1251"
 
 ;---------------------------------------------------------------------
-; Р Р°СЃС‡РёС‚С‹РІР°РµРј СЃРјРµС‰РµРЅРёРµ РїРѕР·РёС†РёСЏ РґР»СЏ Р»РёРЅРµР№РЅРѕРіРѕ Р±СѓС„РµСЂР°
+; Расчитываем смещение позиция для линейного буфера
 _invstack_Calculate_Offset_Position proc
 ; r10 - position: PutSymbols_Position
 ;	PutSymbols_Position: < _u16:length | u16:width | u16:y | u16:x >
@@ -29,10 +31,6 @@ _invstack_Calculate_Offset_Position proc
 	ret
 
 _invstack_Calculate_Offset_Position endp
-;---------------------------------------------------------------------
-
-;---------------------------------------------------------------------
-
 ;---------------------------------------------------------------------
 
 ;#####################################################################
@@ -173,7 +171,7 @@ Put_Symbols_Region endp
 ;#####################################################################
 
 ;---------------------------------------------------------------------
-; Р РёСЃСѓРµРј С†РІРµС‚РѕРІРѕР№ РїСЂСЏРјРѕСѓРіРѕР»СЊРЅРёРє
+; Рисуем цветовой прямоугольник
 Draw_Color_Rectangle proc
 	; void (CHAR_INFO * screenBuffer, DrawRectangleParams params)
 	; DrawRectangleParams = { u16 };
@@ -192,23 +190,23 @@ Draw_Color_Rectangle proc
 	shl rax, 2
 	
 	; r10 = 16
-	; r10 - СЃС‡С‘С‚С‡РёРє РІС‹СЃРѕС‚С‹
+	; r10 - счётчик высоты
 	mov r10, 16
 
 _draw_color_rectangle:
 		; r11 = 16
-		; r11 - СЃС‡С‘С‚С‡РёРє С€РёСЂРёРЅС‹
+		; r11 - счётчик ширины
 		mov r11, 16
 
 	_draw_color_line: 
 			; rbx = { u4:c_background }
 			mov rbx, r10
-			sub rbx, 1 ; РїРѕРїСЂР°РІРєР° СЃС‡С‘С‚С‡РёРєР°
+			sub rbx, 1 ; поправка счётчика
 
 			; rbx = { u4:c_background, u4:c_symbol }
 			shl rbx, 4
 			add rbx, r11
-			sub rbx, 1 ; РїРѕРїСЂР°РІРєР° СЃС‡С‘С‚С‡РёРєР°
+			sub rbx, 1 ; поправка счётчика
 
 			; rbx = { u4:c_background, u4:c_symbol, u16:symbol }
 			shl rbx, 16
@@ -222,13 +220,42 @@ _draw_color_rectangle:
 			dec r11
 			jnz _draw_color_line
 
+		; устанавливает цвет чёрнобелый и символ '0'
+		mov rbx, 0f0002Fh
+		add rbx, r10
+
+		cmp rbx, 0f0003Ah
+		jl _skip_add_offset_to_char
+			add rbx, 07h
+		_skip_add_offset_to_char:
+
+		mov [rcx], rbx
+
 		; shift next line charpointer
 		add rcx, rax
 
 		; counter
 		dec r10
 		jnz _draw_color_rectangle
-	
+
+	; устанавливает цвет чёрнобелый и символ 'F'
+	mov rbx, 0f00046h
+
+	_draw_indexs_line_char:
+		mov [rcx], rbx
+		add rcx, 4
+		dec rbx
+		cmp rbx, 0f00041h
+		jge _draw_indexs_line_char
+
+	sub rbx, 07h
+	_draw_indexs_line_numbers:
+		mov [rcx], rbx
+		add rcx, 4
+		dec rbx
+		cmp rbx, 0f00030h
+		jge _draw_indexs_line_numbers
+
 	pop rax
 	pop rbx
 	pop rcx 
