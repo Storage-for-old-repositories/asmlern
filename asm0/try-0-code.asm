@@ -104,6 +104,7 @@ Put_Symbols_Region proc
 	push rdi
 	push rax
 	push rcx
+	push r10
 	push r11
 	push r12
 	push r13
@@ -152,18 +153,167 @@ Put_Symbols_Region proc
 		dec r14
 		jnz _height_iterator
 
-	pop rdi
-	pop rax
-	pop rcx
-	pop r11
-	pop r12
-	pop r13
 	pop r14
+	pop r13
+	pop r12
+	pop r11
+	pop r10
+	pop rcx
+	pop rax
+	pop rdi
 
 	ret
 
 Put_Symbols_Region endp
 ;---------------------------------------------------------------------
+
+;---------------------------------------------------------------------
+; void Draw_Color_9SliceRectangle(
+;	CHAR_INFO * screenBuffer, 
+;	PutSymbols_Position position, 
+;	DrawRectangleParams params,
+;	unsigned short symbols[7]
+;)
+Draw_Color_9SliceRectangle proc
+; rcx - screenBuffer
+; rdx - position: PutSymbols_Position
+;	< u16:region_width | u16:width | u16:y | u16:x >
+; r8 - rectParams: DrawRectangleParams
+;	< u16:color, u16:height >
+; r9 - symbols
+;
+;; void
+
+	; r11 = byteoffset in screenBuffer
+	mov r10, rdx
+	call _invstack_Calculate_Offset_Position
+
+	; put top-left char
+	mov r10, r8
+	and r10, 0ffff0000h  ; apply color mask
+	mov rax, [r9]        ; read char
+	and rax, 0ffffh      ; apply first char mask
+	or rax, r10          ; color | char
+	mov [rcx + r11], eax ; put char
+
+	; save registers
+	mov r12, rdx
+	mov r13, r8
+
+	; put top line
+	;; 
+	mov r10, r8
+	and r10, 0ffff0000h   ; apply color mask
+	mov r8, [r9 + 2 * 4]  ; read char
+	and r8, 0ffffh        ; apply first char mask
+	or r8, r10            ; u16:color | u16:char
+	xor r10, r10
+	add r10, 1
+	shl r10, 32
+	or r8, r10            ; u16:height | u16:color | u16:char
+	add rdx, 1            ; position.x += 1
+	xor r10, r10          
+	add r10, 2
+	shl r10, 48
+	sub rdx, r10          ; position.region_width -= 2
+	call Put_Symbols_Region
+
+	; put bottom line
+	mov r10, r13
+	and r10, 0ffffh       ; height
+	sub r10, 1
+	shl r10, 16           
+	add rdx, r10  
+	call Put_Symbols_Region
+
+	; put center block
+	sub rdx, r10  
+	add rdx, 10000h       ; position.y += 1
+	mov r10, r13
+	and r10, 0ffffh       ; height
+	sub r10, 3
+	shl r10, 32
+	add r8, r10           ; rectParams.height += height - 2
+	mov r10, [r9 + 12]    ; read char
+	and r10, 0ffffh       ; apply first char mask
+	shr r8, 16
+	shl r8, 16
+	or r8, r10
+	call Put_Symbols_Region
+
+	; put left line
+	mov r10, [r9 + 10]    ; read char
+	and r10, 0ffffh       ; apply first char mask
+	shr r8, 16
+	shl r8, 16
+	or r8, r10            ; replace char
+	shl rdx, 16
+	shr rdx, 16
+	xor r10, r10
+	add r10, 1
+	shl r10, 48
+	or rdx, r10          ; position.region_width = 1
+	sub rdx, 1           ; position.x -= 1
+	call Put_Symbols_Region
+
+	; put right line
+	mov r10, r12
+	shr r10, 48
+	sub r10, 1
+	add rdx, r10
+	call Put_Symbols_Region
+
+	; put top-right char
+	shl r10, 2
+	add r11, r10
+	mov r10d, r13d
+	and r10, 0ffff0000h  ; apply color mask
+	mov rax, [r9 + 2]    ; read char
+	and rax, 0ffffh      ; apply first char mask
+	or rax, r10          ; color | char
+	mov [rcx + r11], eax ; put char
+
+	push r13
+	push r12
+
+	; r11 = byteoffset in screenBuffer
+	mov r10, r12
+	mov r11, r13
+	and r11, 0ffffh      ; height
+	sub r11, 1
+	shl r11, 16
+	add r10, r11
+	call _invstack_Calculate_Offset_Position
+
+	pop r12
+	pop r13
+
+	; put left-bottom char
+	mov r10d, r13d
+	and r10, 0ffff0000h  ; apply color mask
+	mov rax, [r9 + 4]    ; read char
+	and rax, 0ffffh      ; apply first char mask
+	or rax, r10          ; color | char
+	mov [rcx + r11], eax ; put char
+
+	; put left-bottom char
+	mov r10d, r13d
+	and r10, 0ffff0000h  ; apply color mask
+	mov rax, [r9 + 6]    ; read char
+	and rax, 0ffffh      ; apply first char mask
+	or rax, r10          ; color | char
+	mov r10, r12
+	shr r10, 48
+	sub r10, 1
+	shl r10, 2
+	add r11, r10
+	mov [rcx + r11], eax ; put char
+
+	ret
+
+Draw_Color_9SliceRectangle endp
+;---------------------------------------------------------------------
+
 
 ;#####################################################################
 ;#####################################################################
@@ -226,7 +376,7 @@ _draw_color_rectangle:
 
 		cmp rbx, 0f0003Ah
 		jl _skip_add_offset_to_char
-			add rbx, 07h
+			add rbx, 07h ; смещаемся от символа '9' к символу 'A'
 		_skip_add_offset_to_char:
 
 		mov [rcx], rbx
@@ -241,20 +391,12 @@ _draw_color_rectangle:
 	; устанавливает цвет чёрнобелый и символ 'F'
 	mov rbx, 0f00046h
 
-	_draw_indexs_line_char:
-		mov [rcx], rbx
-		add rcx, 4
-		dec rbx
-		cmp rbx, 0f00041h
-		jge _draw_indexs_line_char
+	mov r10, 0f00041h ; устанавливаем предел рисования символ 'A'
+	call _draw_indexs_line
 
-	sub rbx, 07h
-	_draw_indexs_line_numbers:
-		mov [rcx], rbx
-		add rcx, 4
-		dec rbx
-		cmp rbx, 0f00030h
-		jge _draw_indexs_line_numbers
+	sub rbx, 07h ; смещаемся от символа 'A' к символу '9'
+	mov r10, 0f00030h ; устанавливаем предел рисования символ '0'
+	call _draw_indexs_line
 
 	pop rax
 	pop rbx
@@ -265,6 +407,19 @@ _draw_color_rectangle:
 	ret 
 
 Draw_Color_Rectangle endp
+
+_draw_indexs_line proc
+	
+	_cycle:
+		mov [rcx], rbx
+		add rcx, 4
+		dec rbx
+		cmp rbx, r10
+		jge _draw_indexs_line
+
+	ret
+
+_draw_indexs_line endp
 ;---------------------------------------------------------------------
 
 

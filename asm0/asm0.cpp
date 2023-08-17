@@ -30,9 +30,17 @@ extern "C" void Put_Symbols_Region(CHAR_INFO * screenBuffer, PutSymbols_Position
 struct DrawRectangleParams
 {
 	unsigned short length;
+	unsigned short color;
 };
 
 extern "C" void Draw_Color_Rectangle(CHAR_INFO * screenBuffer, DrawRectangleParams params);
+
+extern "C" void Draw_Color_9SliceRectangle(
+	CHAR_INFO * screenBuffer, 
+	PutSymbols_Position position, 
+	DrawRectangleParams params,
+	unsigned short symbols[7]
+);
 
 int main(void)
 {
@@ -94,7 +102,8 @@ int main(void)
 
 	CHAR_INFO symbol{ L'Z', 0x0F };
 
-	DrawRectangleParams colorReactParams{ width };
+	DrawRectangleParams colorReactParams{ width, 0xF0 };
+	DrawRectangleParams colorReactParams2{ 7, 0xF0 };
 
 	Draw_Color_Rectangle(screenBuffer, colorReactParams);
 
@@ -105,6 +114,20 @@ int main(void)
 
 	Put_Symbols_Horizontal(screenBuffer, putSymbolsParams, putSymbolsDrawParam);
 	Put_Symbols_Region(screenBuffer, regionPars, putSymbolsDrawParam);
+
+	unsigned short symbols[7] = { 
+		L'┌',
+		L'┐',
+		L'└',
+		L'┘',
+		L'─',
+		L'│',
+		L' ',
+	};
+
+	Draw_Color_9SliceRectangle(
+		screenBuffer, regionPars, colorReactParams2, symbols
+	);
 
 	WriteConsoleOutput(
 		hNewScreenBuffer,
